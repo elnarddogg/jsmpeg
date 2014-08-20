@@ -1,30 +1,54 @@
 module.exports = function( grunt ) {
 
 
-    var Script = [
-        'jsmpg.js'
+    var httpd = require( 'httpd-node' );
+    var fs = require( 'fs-extra' );
+
+
+    httpd.environ( 'root' , __dirname );
+
+
+    var Main = [
+        'src/index.js'
     ];
 
 
-    grunt.registerTask( 'always' , [
-        //'jshint',
-        'clean',
-        'git-describe',
-        'createHash',
-        'replace'
-    ]);
+    var Lib = [
+        'src/lib/mojo-0.1.5.min.js',
+        'src/lib/requestAnimationFrame-pollyfill-0.1.0.js'
+    ];
 
 
-    grunt.registerTask( 'default' , [
-        'always',
-        'uglify'
-    ]);
+    var Imports = {
+        Constants: 'src/imports/constants.js',
+        BitReader: 'src/imports/bitreader.js',
+        Controls: 'src/imports/modules/controls.js',
+        SocketStream: 'src/imports/modules/socketStream.js',
+        SocketRecord: 'src/imports/modules/socketRecord.js',
+        AjaxLoad: 'src/imports/modules/ajaxLoad.js',
+        Util: 'src/imports/modules/util.js',
+        Sequence: 'src/imports/modules/sequence.js',
+        Picture: 'src/imports/modules/picture.js',
+        Slice: 'src/imports/modules/slice.js',
+        Macroblock: 'src/imports/modules/macroblock.js',
+        Block: 'src/imports/modules/block.js',
+        Callbacks: 'src/imports/modules/callbacks.js'
+    };
 
 
-    grunt.registerTask( 'dev' , [
-        'always',
-        'concat',
-    ]);
+    Object.defineProperty( Imports , 'array' , {
+        get: function() {
+            return Object.keys( Imports ).map(function( key ) {
+                return Imports[key];
+            });
+        }
+    });
+
+
+    var All = Lib.concat( Main );
+
+
+    var Watch = ([ 'Gruntfile.js' , 'package.json' , 'test/*' ]).concat( All , Imports.array );
 
 
     grunt.initConfig({
@@ -39,45 +63,85 @@ module.exports = function( grunt ) {
         },
 
         jshint : {
-            all : ([ 'Gruntfile.js' ]).concat( Script )
+            all : ([ 'Gruntfile.js' ]).concat( Main )
         },
 
         clean: {
-            all: [ '<%= pkg.name %>-*.js' ]
+            build: [ '<%= pkg.name %>-*.js' , 'live' ],
+            temp: [ 'temp' ]
         },
 
-        replace: [{
-            options: {
-                patterns: [
+        replace: {
+            debug: {
+                options: {
+                    patterns: [
+                        {
+                            match: /<\!(\-){2}\s\[BUILD\]\s(\-){2}>/,
+                            replacement: '<script src=\"../<%= BUILD %>\"></script>'
+                        },
+                        {
+                            match: /(\/\*){0,1}\[SERVER_ADDR\](\*\/){0,1}/g,
+                            replacement: function() {
+                                return 'http://'
+                                    + (grunt.config.get( 'HOST' ) || 'localhost')
+                                    + ':' + grunt.config.get( 'PORT' ) + '/';
+                            }
+                        }
+                    ]
+                },
+                files: [{
+                    src: 'live/index.html',
+                    dest: 'live/index.html'
+                }]
+            },
+            prod: {
+                options: {
+                    patterns: [
+                        {
+                            match: /(\"version\")(.*?)(\")(.{1,}?)(\")/i,
+                            replacement: '\"version\": \"<%= pkg.version %>\"'
+                        },
+                        {
+                            match: /(\"main\")(.*?)(\")(.{1,}?)(\")/i,
+                            replacement: '\"main\": \"<%= BUILD %>\"'
+                        }
+                    ]
+                },
+                files: [
                     {
-                        match: /(\"version\")(.*?)(\")(.{1,}?)(\")/i,
-                        replacement: '\"version\": \"<%= pkg.version %>\"'
+                        src: 'package.json',
+                        dest: 'package.json'
                     },
                     {
-                        match: /(\"main\")(.*?)(\")(.{1,}?)(\")/i,
-                        replacement: '\"main\": \"<%= pkg.name %>-<%= pkg.version %>.min.js\"'
+                        src: 'bower.json',
+                        dest: 'bower.json'
                     }
                 ]
+            }
+        },
+
+        watch: {
+            debug: {
+                files: Watch,
+                tasks: [ '_debug' ]
             },
-            files: [
-                {
-                    src: 'package.json',
-                    dest: 'package.json'
-                },
-                {
-                    src: 'bower.json',
-                    dest: 'bower.json'
-                }
-            ]
-        }],
+            debugProd: {
+                files: Watch,
+                tasks: [ '_debugProd' ]
+            }
+        },
 
         concat: {
-            options: {
-                banner : '/*! <%= pkg.name %> - <%= pkg.version %> - <%= pkg.author.name %> - <%= grunt.config.get( \'git-hash\' ) %> - <%= grunt.template.today("yyyy-mm-dd") %> */\n\n\n'
+            imports: {
+                src: All,
+                dest: 'temp/<%= pkg.name %>.js'
             },
-            build: {
-                src: Script,
-                dest: '<%= pkg.name %>-<%= pkg.version %>.js'
+            dev: {
+                options: {
+                    banner : '/*! <%= pkg.name %> - <%= pkg.version %> - <%= pkg.author.name %> - <%= grunt.config.get( \'git-hash\' ) %> - <%= grunt.template.today("yyyy-mm-dd") %> */\n\n\n'
+                },
+                src: 'temp/<%= pkg.name %>.js',
+                dest: '<%= BUILD %>'
             }
         },
 
@@ -85,9 +149,9 @@ module.exports = function( grunt ) {
             options: {
                 banner : '/*! <%= pkg.name %> - <%= pkg.version %> - <%= pkg.author.name %> - <%= grunt.config.get( \'git-hash\' ) %> - <%= grunt.template.today("yyyy-mm-dd") %> */\n'
             },
-            release : {
-                files : {
-                    '<%= pkg.name %>-<%= pkg.version %>.min.js' : Script
+            release: {
+                files: {
+                    '<%= BUILD %>' : 'temp/<%= pkg.name %>.js'
                 }
             }
         }
@@ -100,9 +164,99 @@ module.exports = function( grunt ) {
         'grunt-git-describe',
         'grunt-replace',
         'grunt-contrib-concat',
-        'grunt-contrib-uglify'
+        'grunt-contrib-uglify',
+        'grunt-contrib-watch'
     ]
     .forEach( grunt.loadNpmTasks );
+
+
+    grunt.registerTask( 'defineBuildSrc' , function() {
+
+        var name = grunt.config.get( 'pkg.name' );
+        var version = grunt.config.get( 'pkg.version' );
+        var type = process.argv[2] || '';
+        var src = name + '-' + version;
+        var ext = '.js';
+
+        if (!type || (/debugProd/).test( type )) {
+            ext = '.min.js'
+        }
+
+        grunt.config.set( 'BUILD' , ( src + ext ));
+    });
+
+
+    grunt.registerTask( 'imports' , function() {
+
+        var tempPath = 'temp/' + grunt.config.get( 'pkg.name' ) + '.js';
+        var temp = fs.readFileSync( tempPath , 'utf-8' );
+
+        var re_line = /(\/{2})([^a-z,A-Z,0-9,\~]*)\@IMPORT+.*/;
+        var re_key = /.*\:+(\W*)/;
+        var match, safe = 0;
+
+        while (match !== null && safe < 100) {
+            match = re_line.exec( temp );
+            if (match) {
+                temp = replaceImport( temp , match[0] );
+            }
+            safe++;
+        }
+
+        fs.writeFileSync( tempPath , temp );
+
+        function replaceImport( temp , line ) {
+            var key = (line || '').replace( re_key , '' );
+            var src = Imports[key];
+            var text = '';
+            if (src && fs.existsSync( src )) {
+                text = fs.readFileSync( src , 'utf-8' );
+            }
+            return temp.replace( re_line , text );
+        }
+    });
+
+
+    grunt.registerTask( 'createTemp' , function() {
+        fs.ensureDirSync( 'temp/' );
+    });
+
+
+    grunt.registerTask( 'getIP' , function() {
+
+        var os = require( 'os' );
+        var ifaces = os.networkInterfaces();
+        var local = '127.0.0.1';
+        var ip = local;
+
+        for (var dev in ifaces) {
+            ifaces[dev].forEach(function( details ) {
+                if ((/ipv4/i).test( details.family ) && details.address !== local) {
+                    ip = details.address;
+                }
+            });
+        }
+
+        grunt.config.set( 'HOST' , ip );
+    });
+
+
+    grunt.registerTask( 'initServer' , function() {
+
+        var server = new httpd();
+
+        server.setHttpDir( 'default' , '/' );
+        server.start();
+
+        grunt.config.set( 'PORT' , server.port );
+    });
+
+
+    grunt.registerTask( 'createLive' , function() {
+        var src = __dirname + '/test';
+        var dest = __dirname + '/live';
+        fs.copySync( src , dest );
+    });
 
 
     grunt.registerTask( 'createHash' , function() {
@@ -125,6 +279,61 @@ module.exports = function( grunt ) {
             grunt.config.set( 'git-hash' , rev );
         }
     });
+
+
+    grunt.registerTask( 'always' , [
+        //'jshint',
+        'defineBuildSrc',
+        'clean',
+        'git-describe',
+        'createHash',
+        'createTemp',
+        'concat:imports',
+        'imports'
+    ]);
+
+    grunt.registerTask( 'default' , [
+        'always',
+        'replace:prod',
+        'uglify',
+        'clean:temp'
+    ]);
+
+    grunt.registerTask( 'dev' , [
+        'always',
+        'concat:dev',
+        'clean:temp'
+    ]);
+
+    grunt.registerTask( '_debug' , [
+        'always',
+        'concat:dev',
+        'createLive',
+        'replace:debug',
+        'clean:temp'
+    ]);
+
+    grunt.registerTask( 'debug' , [
+        'getIP',
+        'initServer',
+        '_debug',
+        'watch:debug'
+    ]);
+
+    grunt.registerTask( '_debugProd' , [
+        'always',
+        'uglify',
+        'createLive',
+        'replace:debug',
+        'clean:temp'
+    ]);
+
+    grunt.registerTask( 'debugProd' , [
+        'getIP',
+        'initServer',
+        '_debugProd',
+        'watch:debugProd'
+    ]);
 };
 
 
