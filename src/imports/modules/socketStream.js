@@ -1,9 +1,7 @@
 // Streaming over WebSockets
 
+(function( JSMPEG ) {
 
-	JSMPEG[PROTOTYPE].waitForIntraFrame = true;
-	JSMPEG[PROTOTYPE].socketBufferSize = 512 * 1024; // 512kb each
-	JSMPEG[PROTOTYPE].onlostconnection = NULL;
 
 	JSMPEG[PROTOTYPE].initSocketClient = function( client ) {
 
@@ -128,6 +126,9 @@
 		that.decodePicture();
 		that.currentPictureDecoded = true;
 	};
+
+
+}( JSMPEG ));
 
 
 

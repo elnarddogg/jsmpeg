@@ -1,35 +1,46 @@
 // Sequence Layer
 
+(function( JSMPEG ) {
 
-	JSMPEG[PROTOTYPE].pictureRate = 30;
-	JSMPEG[PROTOTYPE].lateTime = 0;
-	JSMPEG[PROTOTYPE].firstSequenceHeader = 0;
-	JSMPEG[PROTOTYPE].targetTime = 0;
 
 	JSMPEG[PROTOTYPE].nextFrame = function() {
 
 		var that = this;
 
 		if( !that.buffer ) { return; }
+
 		while(true) {
+
 			var code = that.buffer.findNextMPEGStartCode();
 			
 			if( code == START_SEQUENCE ) {
 				that.decodeSequenceHeader();
 			}
 			else if( code == START_PICTURE ) {
+				
 				if( that.playing ) {
+
+					var s = that.elapsedMacro;
+					var ms = that.elapsedMicro;
+					var total = that.elapsed;
+
 					that.scheduleNextFrame();
+					that.happen( TIMING , [ ms , total ]);
+
+					if (that.lastTic !== s) {
+						that.lastTic = s;
+						that.happen( TIC , [ s , total ]);
+					}
 				}
+
 				that.decodePicture();
 				return that.canvas;
 			}
 			else if( code == BitReader.NOT_FOUND ) {
-				that.stop(); // Jump back to the beginning
 
-				if( that.externalFinishedCallback ) {
-					that.externalFinishedCallback(that);
-				}
+				that.happen( END );
+
+				that.stop(); // Jump back to the beginning
 
 				// Only loop if we found a sequence header
 				if( that.loop && that.sequenceStarted ) {
@@ -46,33 +57,69 @@
 	JSMPEG[PROTOTYPE].scheduleNextFrame = function() {
 
 		var that = this;
+		var now = Date.now();
 
-		that.lateTime = Date.now() - that.targetTime;
+		that.lastTime = that.now || now;
+		that.now = now;
+		that.elapsed += (now - that.lastTime);
+		that.lateTime = now - that.targetTime;
+
 		var wait = Math.max(0, (1000/that.pictureRate) - that.lateTime);
-		that.targetTime = Date.now() + wait;
 
-		if( that.benchmark ) {
-			var now = Date.now();
+		that.targetTime = now + wait;
+
+		if( that.fps ) {
+			
 			if(!that.benchframe) {
 				that.benchstart = now;
 				that.benchframe = 0;
 			}
+			
 			that.benchframe++;
+			
 			var timepassed = now - that.benchstart;
-			if( that.benchframe >= 100 ) {
+
+			if( that.benchframe >= that.fps ) {
 				that.benchfps = (that.benchframe / timepassed) * 1000;
-				if( console ) {
-					console.log("frames per second: " + that.benchfps);
-				}
+				//console.log('frames per second: ' + that.benchfps);
 				that.benchframe = NULL;
+				that.happen( _BENCHFRAME );
 			}
-			setTimeout( that.nextFrame.bind(that), 0);
+			
+			setTimeout( that.nextFrame.bind( that ) , ( 1000 / that.fps ));
 		}
 		else if( wait < 18) {
 			that.scheduleAnimation();
 		}
 		else {
-			setTimeout( that.scheduleAnimation.bind(that), wait );
+			setTimeout( that.scheduleAnimation.bind( that ) , wait );
+		}
+	};
+
+	JSMPEG[PROTOTYPE].scheduleFPSChange = function( fps ) {
+
+		var that = this;
+
+		cancelFPSChange();
+
+		if (that.playing && that.benchframe) {
+			//console.log('schedule fps change');
+			that.once( _BENCHFRAME , changeFPS );
+			that.once( STOP , cancelFPSChange );
+		}
+		else {
+			changeFPS();
+		}
+
+		function changeFPS() {
+			//console.log('change fps');
+			that.fps = ((fps && fps < 2) ? 2 : fps) || NULL;
+			that.targetTime = Date.now();
+		}
+
+		function cancelFPSChange() {
+			//console.log('cancel fps change');
+			that.dispel( _BENCHFRAME );
 		}
 	};
 
@@ -173,6 +220,7 @@
 	};
 
 
+}( JSMPEG ));
 
 
 

@@ -1,11 +1,8 @@
 // Block layer
 
+(function( JSMPEG ) {
 
-	JSMPEG[PROTOTYPE].dcPredictorY;
-	JSMPEG[PROTOTYPE].dcPredictorCr;
-	JSMPEG[PROTOTYPE].dcPredictorCb;
 
-	JSMPEG[PROTOTYPE].blockData = NULL;
 	JSMPEG[PROTOTYPE].decodeBlock = function(block) {
 
 		var that = this;
@@ -287,6 +284,9 @@
 			blockData[7+i] =  (y4 - b7 + 128) >> 8;
 		}
 	};
+
+
+}( JSMPEG ));
 
 
 

@@ -1,5 +1,7 @@
 // Controls
 
+(function( JSMPEG ) {
+
 
 	JSMPEG[PROTOTYPE].play = function() {
 		var that = this;
@@ -7,11 +9,15 @@
 		that.targetTime = Date.now();
 		that.playing = true;
 		that.scheduleNextFrame();
+		that.happen( PLAY );
+		return that;
 	};
 
 	JSMPEG[PROTOTYPE].pause = function() {
 		var that = this;
 		that.playing = false;
+		that.happen( PAUSE );
+		return that;
 	};
 
 	JSMPEG[PROTOTYPE].stop = function() {
@@ -24,7 +30,18 @@
 			that.client.close();
 			that.client = NULL;
 		}
+		that.happen( STOP );
+		return that;
 	};
+
+	JSMPEG[PROTOTYPE].setFPS = function( fps ) {
+		var that = this;
+		that.scheduleFPSChange( fps );
+		return that;
+	};
+
+
+}( JSMPEG ));
 
 
 

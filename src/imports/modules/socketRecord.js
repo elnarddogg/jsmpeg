@@ -1,13 +1,7 @@
 // Recording from WebSockets
 
+(function( JSMPEG ) {
 
-	JSMPEG[PROTOTYPE].isRecording = false;
-	JSMPEG[PROTOTYPE].recorderWaitForIntraFrame = false;
-	JSMPEG[PROTOTYPE].recordedFrames = 0;
-	JSMPEG[PROTOTYPE].recordedSize = 0;
-	JSMPEG[PROTOTYPE].didStartRecordingCallback = NULL;
-
-	JSMPEG[PROTOTYPE].recordBuffers = [];
 
 	JSMPEG[PROTOTYPE].canRecord = function(){
 		var that = this;
@@ -85,6 +79,9 @@
 		that.isRecording = false;
 		return blob;
 	};
+
+
+}( JSMPEG ));
 
 
 

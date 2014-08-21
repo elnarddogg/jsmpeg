@@ -1,8 +1,7 @@
 // Slice Layer
 
+(function( JSMPEG ) {
 
-	JSMPEG[PROTOTYPE].quantizerScale = 0;
-	JSMPEG[PROTOTYPE].sliceBegin = false;
 
 	JSMPEG[PROTOTYPE].decodeSlice = function(slice) {
 
@@ -30,6 +29,9 @@
 			// We may have to ignore Video Stream Start Codes here (0xE0)!?
 		} while( !that.buffer.nextBytesAreStartCode() );
 	};
+
+
+}( JSMPEG ));
 
 
 

@@ -13,16 +13,16 @@ body {
     background-color: #4E5658;
 }
 
-#canvas {
+#video {
     width: 300px;
     height: 169px;
     overflow: hidden;
 }
 
-#video {
+/*#video {
     width: 100%;
     height: 100%;
-}
+}*/
 
 .loading {
     text-align: center;
@@ -32,11 +32,11 @@ body {
     background-color: #f4ae29;
 }
 
-#canvas.ready > .loading {
+#video.ready > .loading {
     display: none;
 }
 
-#canvas:not(.ready) > #video {
+#video:not(.ready) > canvas {
     display: none;
 }
 

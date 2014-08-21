@@ -1,18 +1,7 @@
 // Macroblock Layer
 
+(function( JSMPEG ) {
 
-	JSMPEG[PROTOTYPE].macroblockAddress = 0;
-	JSMPEG[PROTOTYPE].mbRow = 0;
-	JSMPEG[PROTOTYPE].mbCol = 0;
-	
-	JSMPEG[PROTOTYPE].macroblockType = 0;
-	JSMPEG[PROTOTYPE].macroblockIntra = false;
-	JSMPEG[PROTOTYPE].macroblockMotFw = false;
-	
-	JSMPEG[PROTOTYPE].motionFwH = 0;
-	JSMPEG[PROTOTYPE].motionFwV = 0;
-	JSMPEG[PROTOTYPE].motionFwHPrev = 0;
-	JSMPEG[PROTOTYPE].motionFwVPrev = 0;
 
 	JSMPEG[PROTOTYPE].decodeMacroblock = function() {
 
@@ -416,6 +405,9 @@
 			}
 		}
 	};
+
+
+}( JSMPEG ));
 
 
 

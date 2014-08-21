@@ -1,23 +1,6 @@
 // Picture Layer
 
-
-	JSMPEG[PROTOTYPE].currentY = NULL;
-	JSMPEG[PROTOTYPE].currentCr = NULL;
-	JSMPEG[PROTOTYPE].currentCb = NULL;
-
-	JSMPEG[PROTOTYPE].currentRGBA = NULL;
-
-	JSMPEG[PROTOTYPE].pictureCodingType = 0;
-
-	// Buffers for motion compensation
-	JSMPEG[PROTOTYPE].forwardY = NULL;
-	JSMPEG[PROTOTYPE].forwardCr = NULL;
-	JSMPEG[PROTOTYPE].forwardCb = NULL;
-
-	JSMPEG[PROTOTYPE].fullPelForward = false;
-	JSMPEG[PROTOTYPE].forwardFCode = 0;
-	JSMPEG[PROTOTYPE].forwardRSize = 0;
-	JSMPEG[PROTOTYPE].forwardF = 0;
+(function( JSMPEG ) {
 
 
 	JSMPEG[PROTOTYPE].decodePicture = function(skipOutput) {
@@ -72,9 +55,7 @@
 			}
 			that.canvasContext.putImageData(that.currentRGBA, 0, 0);
 
-			if(that.externalDecodeCallback) {
-				that.externalDecodeCallback(that, that.canvas);
-			}
+			that.happen( DECODE_FRAME , that.canvas );
 		}
 		
 		// If this is a reference picutre then rotate the prediction pointers
@@ -205,6 +186,9 @@
 			yIndex += yNext2Lines;
 		}
 	};
+
+
+}( JSMPEG ));
 
 
 

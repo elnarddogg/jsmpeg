@@ -1,5 +1,7 @@
 // Utilities
 
+(function( JSMPEG ) {
+
 
 	JSMPEG[PROTOTYPE].readCode = function(codeTable) {
 		var that = this;
@@ -27,6 +29,9 @@
 			a[i] = value;
 		}
 	};
+
+
+}( JSMPEG ));
 
 
 

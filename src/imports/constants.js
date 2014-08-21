@@ -2,20 +2,17 @@
 
 
 var NULL = null;
-
-
-var PROTOTYPE = 'prototype';
-
-
 var ONLOAD = 'onload';
-
-
+var PLAY = 'play';
+var PAUSE = 'pause';
 var TIMING = 'timing';
-
-
+var TIC = 'tic';
+var DECODE_FRAME = 'decodeFrame';
+var STOP = 'stop';
+var END = 'end';
+var _BENCHFRAME = 'benchframe';
+var PROTOTYPE = 'prototype';
 var SOCKET_MAGIC_BYTES = 'jsmp';
-
-
 var DECODE_SKIP_OUTPUT = 1;
 
 

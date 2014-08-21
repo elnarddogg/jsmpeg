@@ -1,7 +1,13 @@
 // Loading via Ajax
 
+(function( JSMPEG ) {
 
-	JSMPEG[PROTOTYPE].load = function( url ) {
+
+	JSMPEG[PROTOTYPE].loadVideo = function( url ) {
+
+		if (!url) {
+			throw new Error( 'video url is required' );
+		}
 
 		var that = this;
 
@@ -14,9 +20,10 @@
 				that.loadCallback(request.response);
 			}
 		};
-		request.onprogress = that.updateLoader.bind(that);
 
-		request.open('GET', url);
+		request.onprogress = that.updateLoader.bind( that );
+
+		request.open( 'GET' , url , true );
 		request.responseType = "arraybuffer";
 		request.send();
 	};
@@ -41,9 +48,7 @@
 
 		var that = this;
 		
-		var time = Date.now();
 		that.buffer = new BitReader(file);
-		
 		that.findStartCode(START_SEQUENCE);
 		that.firstSequenceHeader = that.buffer.index;
 		that.decodeSequenceHeader();
@@ -57,6 +62,9 @@
 
 		that.happen( ONLOAD );
 	};
+
+
+}( JSMPEG ));
 
 
 

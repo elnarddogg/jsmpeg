@@ -1,26 +1,20 @@
 (function() {
 
 
-    //var VideoURL = 'video/big_buck_bunny.mpg?r=' + Date.now();
-    var VideoURL = '/big-buck-bunny.mpg?r=' + Date.now();
+    var VideoURL = 'video/big_buck_bunny.mpg';
 
 
-    var container = document.querySelector( '#canvas' );
-    var canvas = document.querySelector( '#video' );
     var play = document.querySelector( '#play' );
     var stop = document.querySelector( '#stop' );
 
-    var bcr = canvas.getBoundingClientRect();
-    canvas.setAttribute( 'width' , bcr.width );
-    canvas.setAttribute( 'height' , bcr.height );
 
-    var jsmpeg = new JSMPEG( VideoURL , {
-        canvas: canvas,
+    var jsmpeg = new JSMPEG( '#video' , {
+        video: (VideoURL + '?r=' + Date.now()),
         autoplay: true
     })
-    .onload(function () {
+    .onload(function( e ) {
 
-        container.classList.add( 'ready' );
+        jsmpeg.container.classList.add( 'ready' );
 
         play.addEventListener( 'click' , function( e ) {
             jsmpeg.play();
@@ -29,6 +23,47 @@
         stop.addEventListener( 'click' , function( e ) {
             jsmpeg.stop();
         });
+
+        /*setTimeout(function() {
+            jsmpeg.pause();
+        }, 2000);
+
+        setTimeout(function() {
+            jsmpeg.play();
+        }, 4000);*/
+
+        /*setTimeout(function() {
+            jsmpeg.setFPS( 100 );
+        }, 2400);
+
+        setTimeout(function() {
+            jsmpeg.setFPS( 150 );
+        }, 2500);
+
+        setTimeout(function() {
+            jsmpeg.setFPS( null );
+        }, 10000);*/
+    })
+    .onplay(function( e ) {
+        console.log(e.type,arguments);
+    })
+    .onpause(function( e ) {
+        console.log(e.type,arguments);
+    })
+    .ondecode(function( e ) {
+        //console.log(e.type,arguments);
+    })
+    .timing(function( e ) {
+        //console.log(e.type,arguments);
+    })
+    .tic(function( e ) {
+        console.log(e.type,arguments);
+    })
+    .onstop(function( e ) {
+        console.log(e.type,arguments);
+    })
+    .end(function( e ) {
+        console.log(e.type,arguments);
     });
 
     

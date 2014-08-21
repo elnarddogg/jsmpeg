@@ -87,7 +87,7 @@
 
         callback = callback || function() {};
 
-        var template = 'ffmpeg -i [input] [output]';
+        var template = 'ffmpeg -i [input] -f mpeg1video [output]';
 
         var cmd = template
             .replace( /\[input\]/ , video )

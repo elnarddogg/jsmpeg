@@ -284,7 +284,7 @@ module.exports = function( grunt ) {
     grunt.registerTask( 'always' , [
         //'jshint',
         'defineBuildSrc',
-        'clean',
+        'clean:build',
         'git-describe',
         'createHash',
         'createTemp',
