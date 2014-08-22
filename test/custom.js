@@ -1,20 +1,21 @@
 (function() {
 
 
-    var VideoURL = 'video/big_buck_bunny.mpg';
+    Require.setManifestPath( 'http://bmcmanus.cs.sandbox.millennialmedia.com/jquery.hx/cdn/manifest.json' );
+    Require.load( 'Solace' , function() {
 
 
-    var play = document.querySelector( '#play' );
-    var stop = document.querySelector( '#stop' );
+        Solace.lineLimit = 10;
 
 
-    var jsmpeg = new JSMPEG( '#video' , {
-        video: (VideoURL + '?r=' + Date.now()),
-        autoplay: true
-    })
-    .onload(function( e ) {
+        var AudioURL = 'video/test3.mp3';
+        var VideoURL = 'video/test3.mpg';
 
-        jsmpeg.container.classList.add( 'ready' );
+
+        var play = document.querySelector( '#play' );
+        var stop = document.querySelector( '#stop' );
+        var pause = document.querySelector( '#pause' );
+
 
         play.addEventListener( 'click' , function( e ) {
             jsmpeg.play();
@@ -24,49 +25,70 @@
             jsmpeg.stop();
         });
 
-        /*setTimeout(function() {
+        pause.addEventListener( 'click' , function( e ) {
             jsmpeg.pause();
-        }, 2000);
+        });
 
-        setTimeout(function() {
-            jsmpeg.play();
-        }, 4000);*/
 
-        /*setTimeout(function() {
-            jsmpeg.setFPS( 100 );
-        }, 2400);
+        var jsmpeg = new JSMPEG( '#video' , {
+            audio: (AudioURL + '?r=' + Date.now()),
+            video: (VideoURL + '?r=' + Date.now()),
+            autoplay: true
+        })
+        .ready(function( e ) {
 
-        setTimeout(function() {
-            jsmpeg.setFPS( 150 );
-        }, 2500);
+            console.log(e.type,arguments);
 
-        setTimeout(function() {
-            jsmpeg.setFPS( null );
-        }, 10000);*/
-    })
-    .onplay(function( e ) {
-        console.log(e.type,arguments);
-    })
-    .onpause(function( e ) {
-        console.log(e.type,arguments);
-    })
-    .ondecode(function( e ) {
-        //console.log(e.type,arguments);
-    })
-    .timing(function( e ) {
-        //console.log(e.type,arguments);
-    })
-    .tic(function( e ) {
-        console.log(e.type,arguments);
-    })
-    .onstop(function( e ) {
-        console.log(e.type,arguments);
-    })
-    .end(function( e ) {
-        console.log(e.type,arguments);
+            jsmpeg.container.classList.add( 'ready' );
+
+            /*setTimeout(function() {
+                jsmpeg.pause();
+            }, 2000);
+
+            setTimeout(function() {
+                jsmpeg.play();
+            }, 4000);*/
+
+            /*setTimeout(function() {
+                jsmpeg.setFPS( 100 );
+            }, 2400);
+
+            setTimeout(function() {
+                jsmpeg.setFPS( 150 );
+            }, 2500);
+
+            setTimeout(function() {
+                jsmpeg.setFPS( null );
+            }, 10000);*/
+        })
+        .error(function( e ) {
+            console.log(e.type,arguments);
+        })
+        .onplay(function( e ) {
+            console.log(e.type,arguments);
+        })
+        .onpause(function( e ) {
+            console.log(e.type,arguments);
+        })
+        .ondecode(function( e ) {
+            //console.log(e.type,arguments);
+        })
+        .timing(function( e ) {
+            //console.log(e.type,arguments);
+        })
+        .tic(function( e , elapsedMacro , elapsed ) {
+            console.log(e.type,elapsedMacro,elapsed/*,Math.round((elapsed/jsmpeg.duration) * 100)*/);
+            //console.log(e.type,arguments);
+        })
+        .onstop(function( e ) {
+            console.log(e.type,arguments);
+        })
+        .end(function( e ) {
+            console.log(e.type,arguments);
+        });
+
+        console.log(jsmpeg);
     });
-
-    
 
 }());
 

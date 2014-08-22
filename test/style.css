@@ -19,11 +19,6 @@ body {
     overflow: hidden;
 }
 
-/*#video {
-    width: 100%;
-    height: 100%;
-}*/
-
 .loading {
     text-align: center;
     width: 100%;
@@ -41,14 +36,18 @@ body {
 }
 
 #controls {
-    width: 260px;
-    padding: 20px;
+    width: 300px;
+	padding: 10px 0;
 }
 
 #controls > button {
-    width: 110px;
-    height: 50px;
-    margin: 0 5px;
+	width: 90px;
+	height: 50px;
+	margin-left: 10px;
+}
+
+#controls > button:first-child {
+	margin-left: 0;
 }
 
 

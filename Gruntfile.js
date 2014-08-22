@@ -14,6 +14,7 @@ module.exports = function( grunt ) {
 
 
     var Lib = [
+        'src/lib/wee-promise-0.1.1.min.js',
         'src/lib/mojo-0.1.5.min.js',
         'src/lib/requestAnimationFrame-pollyfill-0.1.0.js'
     ];
@@ -32,7 +33,8 @@ module.exports = function( grunt ) {
         Slice: 'src/imports/modules/slice.js',
         Macroblock: 'src/imports/modules/macroblock.js',
         Block: 'src/imports/modules/block.js',
-        Callbacks: 'src/imports/modules/callbacks.js'
+        Callbacks: 'src/imports/modules/callbacks.js',
+        Audio: 'src/imports/modules/audio.js'
     };
 
 

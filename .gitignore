@@ -5,6 +5,7 @@ node_modules
 # test files #
 ##############
 temp
+live
 test/video
 
 # OS generated files #

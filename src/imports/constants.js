@@ -2,11 +2,13 @@
 
 
 var NULL = null;
-var ONLOAD = 'onload';
+var READY = 'ready';
+var ERROR = 'error';
 var PLAY = 'play';
 var PAUSE = 'pause';
 var TIMING = 'timing';
 var TIC = 'tic';
+var AUDIO_READY = 'audioReady';
 var DECODE_FRAME = 'decodeFrame';
 var STOP = 'stop';
 var END = 'end';

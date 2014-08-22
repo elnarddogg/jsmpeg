@@ -3,221 +3,221 @@
 (function( JSMPEG ) {
 
 
-	JSMPEG[PROTOTYPE].nextFrame = function() {
+    JSMPEG[PROTOTYPE].nextFrame = function() {
 
-		var that = this;
+        var that = this;
 
-		if( !that.buffer ) { return; }
+        if( !that.buffer ) { return; }
 
-		while(true) {
+        while(true) {
 
-			var code = that.buffer.findNextMPEGStartCode();
-			
-			if( code == START_SEQUENCE ) {
-				that.decodeSequenceHeader();
-			}
-			else if( code == START_PICTURE ) {
-				
-				if( that.playing ) {
+            var code = that.buffer.findNextMPEGStartCode();
+            
+            if( code == START_SEQUENCE ) {
+                that.decodeSequenceHeader();
+            }
+            else if( code == START_PICTURE ) {
+                
+                if( that.playing ) {
 
-					var s = that.elapsedMacro;
-					var ms = that.elapsedMicro;
-					var total = that.elapsed;
+                    var s = that.elapsedMacro;
+                    var ms = that.elapsedMicro;
+                    var total = that.elapsed;
 
-					that.scheduleNextFrame();
-					that.happen( TIMING , [ ms , total ]);
+                    that.scheduleNextFrame();
+                    that.happen( TIMING , [ ms , total ]);
 
-					if (that.lastTic !== s) {
-						that.lastTic = s;
-						that.happen( TIC , [ s , total ]);
-					}
-				}
+                    if (that.lastTic !== s) {
+                        that.lastTic = s;
+                        that.happen( TIC , [ s , total ]);
+                    }
+                }
 
-				that.decodePicture();
-				return that.canvas;
-			}
-			else if( code == BitReader.NOT_FOUND ) {
+                that.decodePicture();
+                return that.canvas;
+            }
+            else if( code == BitReader.NOT_FOUND ) {
 
-				that.happen( END );
+                that.happen( END );
 
-				that.stop(); // Jump back to the beginning
+                that.stop(); // Jump back to the beginning
 
-				// Only loop if we found a sequence header
-				if( that.loop && that.sequenceStarted ) {
-					that.play();
-				}
-				return NULL;
-			}
-			else {
-				// ignore (GROUP, USER_DATA, EXTENSION, SLICES...)
-			}
-		}
-	};
+                // Only loop if we found a sequence header
+                if( that.loop && that.sequenceStarted ) {
+                    that.play();
+                }
+                return NULL;
+            }
+            else {
+                // ignore (GROUP, USER_DATA, EXTENSION, SLICES...)
+            }
+        }
+    };
 
-	JSMPEG[PROTOTYPE].scheduleNextFrame = function() {
+    JSMPEG[PROTOTYPE].scheduleNextFrame = function() {
 
-		var that = this;
-		var now = Date.now();
+        var that = this;
+        var now = Date.now();
 
-		that.lastTime = that.now || now;
-		that.now = now;
-		that.elapsed += (now - that.lastTime);
-		that.lateTime = now - that.targetTime;
+        that.lastTime = that.now || now;
+        that.now = now;
+        that._incrementTime( now - that.lastTime );
+        that.lateTime = now - that.targetTime;
 
-		var wait = Math.max(0, (1000/that.pictureRate) - that.lateTime);
+        var wait = Math.max(0, (1000/that.pictureRate) - that.lateTime);
 
-		that.targetTime = now + wait;
+        that.targetTime = now + wait;
 
-		if( that.fps ) {
-			
-			if(!that.benchframe) {
-				that.benchstart = now;
-				that.benchframe = 0;
-			}
-			
-			that.benchframe++;
-			
-			var timepassed = now - that.benchstart;
+        if( that.fps ) {
+            
+            if(!that.benchframe) {
+                that.benchstart = now;
+                that.benchframe = 0;
+            }
+            
+            that.benchframe++;
+            
+            var timepassed = now - that.benchstart;
 
-			if( that.benchframe >= that.fps ) {
-				that.benchfps = (that.benchframe / timepassed) * 1000;
-				//console.log('frames per second: ' + that.benchfps);
-				that.benchframe = NULL;
-				that.happen( _BENCHFRAME );
-			}
-			
-			setTimeout( that.nextFrame.bind( that ) , ( 1000 / that.fps ));
-		}
-		else if( wait < 18) {
-			that.scheduleAnimation();
-		}
-		else {
-			setTimeout( that.scheduleAnimation.bind( that ) , wait );
-		}
-	};
+            if( that.benchframe >= that.fps ) {
+                that.benchfps = (that.benchframe / timepassed) * 1000;
+                //console.log('frames per second: ' + that.benchfps);
+                that.benchframe = NULL;
+                that.happen( _BENCHFRAME );
+            }
+            
+            setTimeout( that.nextFrame.bind( that ) , ( 1000 / that.fps ));
+        }
+        else if( wait < 18) {
+            that.scheduleAnimation();
+        }
+        else {
+            setTimeout( that.scheduleAnimation.bind( that ) , wait );
+        }
+    };
 
-	JSMPEG[PROTOTYPE].scheduleFPSChange = function( fps ) {
+    JSMPEG[PROTOTYPE].scheduleFPSChange = function( fps ) {
 
-		var that = this;
+        var that = this;
 
-		cancelFPSChange();
+        cancelFPSChange();
 
-		if (that.playing && that.benchframe) {
-			//console.log('schedule fps change');
-			that.once( _BENCHFRAME , changeFPS );
-			that.once( STOP , cancelFPSChange );
-		}
-		else {
-			changeFPS();
-		}
+        if (that.playing && that.benchframe) {
+            //console.log('schedule fps change');
+            that.once( _BENCHFRAME , changeFPS );
+            that.once( STOP , cancelFPSChange );
+        }
+        else {
+            changeFPS();
+        }
 
-		function changeFPS() {
-			//console.log('change fps');
-			that.fps = ((fps && fps < 2) ? 2 : fps) || NULL;
-			that.targetTime = Date.now();
-		}
+        function changeFPS() {
+            //console.log('change fps');
+            that.fps = ((fps && fps < 2) ? 2 : fps) || NULL;
+            that.targetTime = Date.now();
+        }
 
-		function cancelFPSChange() {
-			//console.log('cancel fps change');
-			that.dispel( _BENCHFRAME );
-		}
-	};
+        function cancelFPSChange() {
+            //console.log('cancel fps change');
+            that.dispel( _BENCHFRAME );
+        }
+    };
 
-	JSMPEG[PROTOTYPE].scheduleAnimation = function() {
-		var that = this;
-		requestAnimationFrame( that.nextFrame.bind(that), that.canvas );
-	};
-		
-	JSMPEG[PROTOTYPE].decodeSequenceHeader = function() {
+    JSMPEG[PROTOTYPE].scheduleAnimation = function() {
+        var that = this;
+        requestAnimationFrame( that.nextFrame.bind(that), that.canvas );
+    };
+        
+    JSMPEG[PROTOTYPE].decodeSequenceHeader = function() {
 
-		var that = this;
+        var that = this;
 
-		that.width = that.buffer.getBits(12);
-		that.height = that.buffer.getBits(12);
-		that.buffer.advance(4); // skip pixel aspect ratio
-		that.pictureRate = PICTURE_RATE[that.buffer.getBits(4)];
-		that.buffer.advance(18 + 1 + 10 + 1); // skip bitRate, marker, bufferSize and constrained bit
+        that.width = that.buffer.getBits(12);
+        that.height = that.buffer.getBits(12);
+        that.buffer.advance(4); // skip pixel aspect ratio
+        that.pictureRate = PICTURE_RATE[that.buffer.getBits(4)];
+        that.buffer.advance(18 + 1 + 10 + 1); // skip bitRate, marker, bufferSize and constrained bit
 
-		that.initBuffers();
+        that.initBuffers();
 
-		if( that.buffer.getBits(1) ) { // load custom intra quant matrix?
-			for( var i = 0; i < 64; i++ ) {
-				that.customIntraQuantMatrix[ZIG_ZAG[i]] = that.buffer.getBits(8);
-			}
-			that.intraQuantMatrix = that.customIntraQuantMatrix;
-		}
-		
-		if( that.buffer.getBits(1) ) { // load custom non intra quant matrix?
-			for( var i = 0; i < 64; i++ ) {
-				that.customNonIntraQuantMatrix[ZIG_ZAG[i]] = that.buffer.getBits(8);
-			}
-			that.nonIntraQuantMatrix = that.customNonIntraQuantMatrix;
-		}
-	};
+        if( that.buffer.getBits(1) ) { // load custom intra quant matrix?
+            for( var i = 0; i < 64; i++ ) {
+                that.customIntraQuantMatrix[ZIG_ZAG[i]] = that.buffer.getBits(8);
+            }
+            that.intraQuantMatrix = that.customIntraQuantMatrix;
+        }
+        
+        if( that.buffer.getBits(1) ) { // load custom non intra quant matrix?
+            for( var i = 0; i < 64; i++ ) {
+                that.customNonIntraQuantMatrix[ZIG_ZAG[i]] = that.buffer.getBits(8);
+            }
+            that.nonIntraQuantMatrix = that.customNonIntraQuantMatrix;
+        }
+    };
 
-	JSMPEG[PROTOTYPE].initBuffers = function() {
+    JSMPEG[PROTOTYPE].initBuffers = function() {
 
-		var that = this;
-		
-		that.intraQuantMatrix = DEFAULT_INTRA_QUANT_MATRIX;
-		that.nonIntraQuantMatrix = DEFAULT_NON_INTRA_QUANT_MATRIX;
-		
-		that.mbWidth = (that.width + 15) >> 4;
-		that.mbHeight = (that.height + 15) >> 4;
-		that.mbSize = that.mbWidth * that.mbHeight;
-		
-		that.codedWidth = that.mbWidth << 4;
-		that.codedHeight = that.mbHeight << 4;
-		that.codedSize = that.codedWidth * that.codedHeight;
-		
-		that.halfWidth = that.mbWidth << 3;
-		that.halfHeight = that.mbHeight << 3;
-		that.quarterSize = that.codedSize >> 2;
-		
-		// Sequence already started? Don't allocate buffers again
-		if( that.sequenceStarted ) { return; }
-		that.sequenceStarted = true;
-		
-		
-		// Manually clamp values when writing macroblocks for shitty browsers
-		// that don't support Uint8ClampedArray
-		var MaybeClampedUint8Array = window.Uint8ClampedArray || Uint8Array;
-		if( !window.Uint8ClampedArray ) {
-			that.copyBlockToDestination = that.copyBlockToDestinationClamp;
-			that.addBlockToDestination = that.addBlockToDestinationClamp;
-		}
-		
-		// Allocated buffers and resize the canvas
-		that.currentY = new MaybeClampedUint8Array(that.codedSize);
-		that.currentY32 = new Uint32Array(that.currentY.buffer);
+        var that = this;
+        
+        that.intraQuantMatrix = DEFAULT_INTRA_QUANT_MATRIX;
+        that.nonIntraQuantMatrix = DEFAULT_NON_INTRA_QUANT_MATRIX;
+        
+        that.mbWidth = (that.width + 15) >> 4;
+        that.mbHeight = (that.height + 15) >> 4;
+        that.mbSize = that.mbWidth * that.mbHeight;
+        
+        that.codedWidth = that.mbWidth << 4;
+        that.codedHeight = that.mbHeight << 4;
+        that.codedSize = that.codedWidth * that.codedHeight;
+        
+        that.halfWidth = that.mbWidth << 3;
+        that.halfHeight = that.mbHeight << 3;
+        that.quarterSize = that.codedSize >> 2;
+        
+        // Sequence already started? Don't allocate buffers again
+        if( that.sequenceStarted ) { return; }
+        that.sequenceStarted = true;
+        
+        
+        // Manually clamp values when writing macroblocks for shitty browsers
+        // that don't support Uint8ClampedArray
+        var MaybeClampedUint8Array = window.Uint8ClampedArray || Uint8Array;
+        if( !window.Uint8ClampedArray ) {
+            that.copyBlockToDestination = that.copyBlockToDestinationClamp;
+            that.addBlockToDestination = that.addBlockToDestinationClamp;
+        }
+        
+        // Allocated buffers and resize the canvas
+        that.currentY = new MaybeClampedUint8Array(that.codedSize);
+        that.currentY32 = new Uint32Array(that.currentY.buffer);
 
-		that.currentCr = new MaybeClampedUint8Array(that.codedSize >> 2);
-		that.currentCr32 = new Uint32Array(that.currentCr.buffer);
+        that.currentCr = new MaybeClampedUint8Array(that.codedSize >> 2);
+        that.currentCr32 = new Uint32Array(that.currentCr.buffer);
 
-		that.currentCb = new MaybeClampedUint8Array(that.codedSize >> 2);
-		that.currentCb32 = new Uint32Array(that.currentCb.buffer);
-		
+        that.currentCb = new MaybeClampedUint8Array(that.codedSize >> 2);
+        that.currentCb32 = new Uint32Array(that.currentCb.buffer);
+        
 
-		that.forwardY = new MaybeClampedUint8Array(that.codedSize);
-		that.forwardY32 = new Uint32Array(that.forwardY.buffer);
+        that.forwardY = new MaybeClampedUint8Array(that.codedSize);
+        that.forwardY32 = new Uint32Array(that.forwardY.buffer);
 
-		that.forwardCr = new MaybeClampedUint8Array(that.codedSize >> 2);
-		that.forwardCr32 = new Uint32Array(that.forwardCr.buffer);
+        that.forwardCr = new MaybeClampedUint8Array(that.codedSize >> 2);
+        that.forwardCr32 = new Uint32Array(that.forwardCr.buffer);
 
-		that.forwardCb = new MaybeClampedUint8Array(that.codedSize >> 2);
-		that.forwardCb32 = new Uint32Array(that.forwardCb.buffer);
-		
-		that.canvas.width = that.width;
-		that.canvas.height = that.height;
-		
-		that.currentRGBA = that.canvasContext.getImageData(0, 0, that.width, that.height);
+        that.forwardCb = new MaybeClampedUint8Array(that.codedSize >> 2);
+        that.forwardCb32 = new Uint32Array(that.forwardCb.buffer);
+        
+        that.canvas.width = that.width;
+        that.canvas.height = that.height;
+        
+        that.currentRGBA = that.canvasContext.getImageData(0, 0, that.width, that.height);
 
-		if( that.bwFilter ) {
-			// This fails in IE10; don't use the bwFilter if you need to support it.
-			that.currentRGBA32 = new Uint32Array( that.currentRGBA.data.buffer );
-		}
-		that.fillArray(that.currentRGBA.data, 255);
-	};
+        if( that.bwFilter ) {
+            // This fails in IE10; don't use the bwFilter if you need to support it.
+            that.currentRGBA32 = new Uint32Array( that.currentRGBA.data.buffer );
+        }
+        that.fillArray(that.currentRGBA.data, 255);
+    };
 
 
 }( JSMPEG ));

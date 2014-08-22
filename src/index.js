@@ -16,10 +16,12 @@
 window.JSMPEG = (function(
     window,
     document,
+    navigator,
     Object,
     Date,
     XMLHttpRequest,
     Error,
+    Promise,
     requestAnimationFrame,
     setTimeout,
     ArrayBuffer,
@@ -46,9 +48,9 @@ window.JSMPEG = (function(
         that.bwFilter = opts.bwFilter || false;
 
         try {
-            that.canvas = createCanvas( selector );
+            var container = that.container = document.querySelector( selector );
+            that.canvas = createCanvas( container );
             that.canvasContext = that.canvas.getContext( '2d' );
-            that.container = that.canvas.parentNode;
         }
         catch( err ) {
             throw err;
@@ -58,21 +60,42 @@ window.JSMPEG = (function(
         that._init();
 
         Object.defineProperties( that , {
+            elapsed: {
+                get: function() {
+                    return ( that._elapsed + that.vTimeBuffer );
+                }
+            },
             elapsedMacro: {
                 get: function() {
-                    return Math.floor( that.elapsed / 1000 );
+                    return Math.floor(( that.elapsed /*+ that.vTimeBuffer*/ ) / 1000 );
                 }
             },
             elapsedMicro: {
                 get: function() {
-                    return ( that.elapsed % 1000 );
+                    return (( that.elapsed /*+ that.vTimeBuffer*/ ) % 1000 );
                 }
+            },
+            canPlayAudio: {
+                get: function() {
+                    return (that.audio && that.audioContext);
+                }
+            },
+            elapsedAudio: {
+                get: function() {
+                    var elapsedAudio = 0;
+                    if (that.canPlayAudio) {
+                        var audioCurrent = that.audioContext.currentTime;
+                        elapsedAudio = ( Math.round( audioCurrent * 1000 ) + that.aTimeBuffer );
+                    }
+                    return elapsedAudio;
+                }
+            },
+            isIos: {
+                value: (/(ios|iphone)/i).test( navigator.userAgent )
             }
         });
 
-        that.loadVideo( opts.video );
-
-        console.log(that);
+        that.load( opts.video , opts.audio );
     }
 
 
@@ -128,24 +151,93 @@ window.JSMPEG = (function(
             that.targetTime = 0;
             that.lastTime = 0;
             that.now = 0;
-            that.elapsed = 0;
-            that.lastTic = 0;
+            that._elapsed = 0;
+            that.lastTic = null;
+            
+            that.vTimeBuffer = 0;
+            that.aTimeBuffer = 0;
+
+            that.audio = null;
+            that.audioContext = null;
+            that.audioLocked = that.isIos ? true : false;
+
+            that._audioEvent = that._audioEvent.bind( that );
 
             that.when( STOP , function( e ) {
-                that.elapsed = 0;
+                that._elapsed = 0;
                 that.now = 0;
                 that.lastTime = 0;
-                that.lastTic = 0;
+                that.lastTic = null;
+                that.vTimeBuffer = 0;
+                that.aTimeBuffer = 0;
             });
+        },
+
+        load: function( videoURL , audioURL ) {
+
+            var that = this;
+
+            videoURL = (that.videoURL = videoURL || that.videoURL);
+            audioURL = (that.audioURL = audioURL || that.audioURL);
+
+            if (!videoURL) {
+                var err = new Error( 'video url is required' );
+                that.happen( ERROR , err );
+                throw err;
+            }
+
+            var promises = [
+
+                new Promise(function( resolve , reject ) {
+                    that.loadVideo( videoURL , resolve , reject );
+                }),
+
+                new Promise(function( resolve , reject ) {
+                    if (audioURL) {
+                        that.loadAudio( audioURL , resolve , reject );
+                    }
+                    else {
+                        resolve();
+                    }
+                })
+            ];
+
+            Promise.all( promises ).then(function() {
+                that.happen( READY );
+                that.nextFrame();
+                if (that.autoplay) {
+                    that.play();
+                }
+            });
+
+            Promise.all( promises ).catch(function( err ) {
+                that.happen( ERROR , err );
+            });
+        },
+
+        _incrementTime: function( increment ) {
+            var that = this;
+            var _elapsed = '_elapsed';
+            that.set( _elapsed , ( that[_elapsed] + increment ));
+        },
+
+        _incrementTBuff: function( increment , audio ) {
+            var that = this;
+            var timeBuffer = 'TimeBuffer';
+            var vTimeBuffer = 'v' + timeBuffer;
+            var aTimeBuffer = 'a' + timeBuffer;
+            that.set( vTimeBuffer , ( that[vTimeBuffer] + increment ));
+            if (audio) {
+                that.set( aTimeBuffer , ( that[aTimeBuffer] + increment ));
+            }
         }
     });
 
 
-    function createCanvas( selector ) {
+    function createCanvas( container ) {
 
-        var container = document.querySelector( selector );
-        var bcr = container.getBoundingClientRect();
         var canvas = document.createElement( 'canvas' );
+        var bcr = container.getBoundingClientRect();
 
         canvas.setAttribute( 'width' , bcr.width );
         canvas.setAttribute( 'height' , bcr.height );
@@ -170,6 +262,7 @@ window.JSMPEG = (function(
     // @IMPORT : Macroblock
     // @IMPORT : Block
     // @IMPORT : Callbacks
+    // @IMPORT : Audio
     // @IMPORT : BitReader
     
     
@@ -179,10 +272,12 @@ window.JSMPEG = (function(
 })(
     window,
     document,
+    navigator,
     Object,
     Date,
     XMLHttpRequest,
     Error,
+    WeePromise,
     requestAnimationFrame,
     setTimeout,
     ArrayBuffer,

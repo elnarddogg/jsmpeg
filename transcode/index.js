@@ -2,13 +2,13 @@
 
 
     var exec = require( 'child_process' ).exec;
-    var Promise = require( 'es6-promise' ).Promise;
+    var Promise = require( 'wee-promise' );
     var fs = require( 'fs-extra' );
     var util = require( 'util' );
 
 
     var VIDEO = {
-        src: '/Users/bmcmanus/Downloads/big_buck_bunny.mp4',
+        src: '/Users/bmcmanus/Downloads/test3.mp4',
         dest: '/Users/bmcmanus/jsmpeg/test/video/',
     };
 
