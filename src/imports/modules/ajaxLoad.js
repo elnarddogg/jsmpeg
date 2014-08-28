@@ -16,22 +16,26 @@
         };*/
 
         request.onload = function( e ) {
-            resolve();
             that.loadCallback( request.response );
+            resolve();
         };
 
         request.onerror = function( e ) {
             reject( e );
         };
 
-        request.onprogress = that.updateLoader.bind( that );
+        request.onprogress = function( e ) {
+            that.happen( LOADING , ( e.loaded / e.total ));
+        };
+
+        //request.onprogress = that.updateLoader.bind( that );
 
         request.open( 'GET' , url , true );
         request.responseType = "arraybuffer";
         request.send();
     };
 
-    JSMPEG[PROTOTYPE].updateLoader = function( ev ) {
+    /*JSMPEG[PROTOTYPE].updateLoader = function( ev ) {
 
         var that = this;
 
@@ -45,7 +49,7 @@
         ctx.fillRect(0, 0, w, h);
         ctx.fillStyle = '#fff';
         ctx.fillRect(0, h - h*p, w, h*p);
-    };
+    };*/
         
     JSMPEG[PROTOTYPE].loadCallback = function(file) {
 

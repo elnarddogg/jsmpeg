@@ -35,15 +35,19 @@
 
         var that = this;
 
-        if (that.isIos) {
-            window.addEventListener( 'touchstart' , function ts( e ) {
+        if (that.isIos && that.audioLocked) {
+
+            window.addEventListener( 'touchstart' , interaction );
+            window.addEventListener( 'touchmove' , interaction );
+
+            function interaction( e ) {
                 if (that.canPlayAudio) {
-                    var audio = that.audio;
-                    that.happen( AUDIO_READY , audio );
-                    //audio.noteOn( 0 );
-                    window.removeEventListener( 'touchstart' , ts );
+                    that.audioLocked = false;
+                    that.happen( AUDIO_READY , that.audio );
+                    window.removeEventListener( 'touchstart' , interaction );
+                    window.removeEventListener( 'touchmove' , interaction );
                 }
-            });
+            }
         }
         else {
             that.audioLocked = false;
@@ -63,12 +67,10 @@
 
         audioContext.decodeAudioData( that.audioData , function( buffer ) {
             audio.buffer = buffer;
-            //audio.start( 0 );
-            //callback();
+            callback();
             if (!that.audioLocked) {
                 that.happen( AUDIO_READY , audio );
             }
-            callback();
             console.log(audio);
         });
 
@@ -99,19 +101,18 @@
         switch (e.type) {
 
             case AUDIO_READY:
+                //Solace.log('AUDIO_READY');
+                //Solace.log((that.elapsed / 1000));
                 audio = args[1];
-                audio.start( 0 );
-                that._incrementTBuff(
-                     Math.round( that.audioContext.currentTime * 1000 )
-                );
+                audio.start( 0 , (that.elapsed / 1000));
             break;
 
             case TIC:
                 var video = that.elapsed;
                 var audio = that.elapsedAudio;
-                Solace.log( 'video' , video , { color: 'gray' });
-                Solace.log( 'audio' , audio , { color: 'gray' });
-                Solace.log( 'diff' , ( audio - video ) , { color: 'cyan' });
+                //Solace.log( 'video' , video , { color: 'gray' });
+                //Solace.log( 'audio' , audio , { color: 'gray' });
+                //Solace.log( 'diff' , ( audio - video ) , { color: 'cyan' });
                 //console.log('tic');
             break;
 

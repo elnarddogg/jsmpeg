@@ -48,7 +48,7 @@
 
     function incrementTBuff( e , pauseStart ) {
         var that = e.target;
-        that._incrementTBuff(( pauseStart - Date.now() ) , true );
+        that._incrementTBuff( pauseStart - Date.now() );
     }
 
 

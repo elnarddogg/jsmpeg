@@ -57,22 +57,23 @@ window.JSMPEG = (function(
         }
 
         that.setFPS( opts.fps );
+
         that._init();
 
         Object.defineProperties( that , {
             elapsed: {
                 get: function() {
-                    return ( that._elapsed + that.vTimeBuffer );
+                    return ( that._elapsed + that.timeBuffer );
                 }
             },
             elapsedMacro: {
                 get: function() {
-                    return Math.floor(( that.elapsed /*+ that.vTimeBuffer*/ ) / 1000 );
+                    return Math.floor( that.elapsed / 1000 );
                 }
             },
             elapsedMicro: {
                 get: function() {
-                    return (( that.elapsed /*+ that.vTimeBuffer*/ ) % 1000 );
+                    return ( that.elapsed % 1000 );
                 }
             },
             canPlayAudio: {
@@ -85,7 +86,7 @@ window.JSMPEG = (function(
                     var elapsedAudio = 0;
                     if (that.canPlayAudio) {
                         var audioCurrent = that.audioContext.currentTime;
-                        elapsedAudio = ( Math.round( audioCurrent * 1000 ) + that.aTimeBuffer );
+                        elapsedAudio = ( Math.round( audioCurrent * 1000 ) + that.timeBuffer );
                     }
                     return elapsedAudio;
                 }
@@ -154,12 +155,11 @@ window.JSMPEG = (function(
             that._elapsed = 0;
             that.lastTic = null;
             
-            that.vTimeBuffer = 0;
-            that.aTimeBuffer = 0;
+            that.timeBuffer = 0;
 
             that.audio = null;
             that.audioContext = null;
-            that.audioLocked = that.isIos ? true : false;
+            that.audioLocked = true;
 
             that._audioEvent = that._audioEvent.bind( that );
 
@@ -168,8 +168,7 @@ window.JSMPEG = (function(
                 that.now = 0;
                 that.lastTime = 0;
                 that.lastTic = null;
-                that.vTimeBuffer = 0;
-                that.aTimeBuffer = 0;
+                that.timeBuffer = 0;
             });
         },
 
@@ -221,15 +220,10 @@ window.JSMPEG = (function(
             that.set( _elapsed , ( that[_elapsed] + increment ));
         },
 
-        _incrementTBuff: function( increment , audio ) {
+        _incrementTBuff: function( increment ) {
             var that = this;
-            var timeBuffer = 'TimeBuffer';
-            var vTimeBuffer = 'v' + timeBuffer;
-            var aTimeBuffer = 'a' + timeBuffer;
-            that.set( vTimeBuffer , ( that[vTimeBuffer] + increment ));
-            if (audio) {
-                that.set( aTimeBuffer , ( that[aTimeBuffer] + increment ));
-            }
+            var timeBuffer = 'timeBuffer';
+            that.set( timeBuffer , ( that[timeBuffer] + increment ));
         }
     });
 

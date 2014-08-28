@@ -8,15 +8,12 @@ module.exports = function( grunt ) {
     httpd.environ( 'root' , __dirname );
 
 
-    var Main = [
-        'src/index.js'
-    ];
+    var Main = [ 'src/index.js' ];
 
 
-    var Lib = [
-        'src/lib/wee-promise-0.1.1.min.js',
-        'src/lib/mojo-0.1.5.min.js',
-        'src/lib/requestAnimationFrame-pollyfill-0.1.0.js'
+    var Includes = [
+        'src/includes/audiostream-0.1.0.min.js',
+        'src/includes/wee-promise-0.1.1.min.js'
     ];
 
 
@@ -47,7 +44,7 @@ module.exports = function( grunt ) {
     });
 
 
-    var All = Lib.concat( Main );
+    var All = Includes.concat( Main );
 
 
     var Watch = ([ 'Gruntfile.js' , 'package.json' , 'test/*' ]).concat( All , Imports.array );

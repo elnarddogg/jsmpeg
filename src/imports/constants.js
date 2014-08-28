@@ -2,6 +2,7 @@
 
 
 var NULL = null;
+var LOADING = 'loading';
 var READY = 'ready';
 var ERROR = 'error';
 var PLAY = 'play';
@@ -16,6 +17,7 @@ var _BENCHFRAME = 'benchframe';
 var PROTOTYPE = 'prototype';
 var SOCKET_MAGIC_BYTES = 'jsmp';
 var DECODE_SKIP_OUTPUT = 1;
+var TOLERANCE = ( 1000 / 60 );
 
 
 var PICTURE_RATE = [

@@ -3,6 +3,12 @@
 (function( JSMPEG ) {
 
 
+    JSMPEG[PROTOTYPE].loading = function( callback ) {
+        var that = this;
+        return that.when( LOADING , callback );
+    };
+
+
     JSMPEG[PROTOTYPE].ready = function( callback ) {
         var that = this;
         return that.when( READY , callback );
