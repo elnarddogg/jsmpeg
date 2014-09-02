@@ -1,6 +1,9 @@
 module.exports = function( grunt ) {
 
 
+    var HTTPD_NODE_PORT = 8888;
+
+
     var httpd = require( 'httpd-node' );
     var fs = require( 'fs-extra' );
 
@@ -12,9 +15,12 @@ module.exports = function( grunt ) {
 
 
     var Includes = [
-        'src/includes/audiostream-0.1.0.min.js',
-        'src/includes/wee-promise-0.1.1.min.js'
+        'src/external/audiostream-0.1.0.min.js',
+        'src/external/wee-promise-0.1.3.min.js'
     ];
+
+
+    var Build = Includes.concat( Main );
 
 
     var Imports = {
@@ -29,25 +35,8 @@ module.exports = function( grunt ) {
         Picture: 'src/imports/modules/picture.js',
         Slice: 'src/imports/modules/slice.js',
         Macroblock: 'src/imports/modules/macroblock.js',
-        Block: 'src/imports/modules/block.js',
-        Callbacks: 'src/imports/modules/callbacks.js',
-        Audio: 'src/imports/modules/audio.js'
+        Block: 'src/imports/modules/block.js'
     };
-
-
-    Object.defineProperty( Imports , 'array' , {
-        get: function() {
-            return Object.keys( Imports ).map(function( key ) {
-                return Imports[key];
-            });
-        }
-    });
-
-
-    var All = Includes.concat( Main );
-
-
-    var Watch = ([ 'Gruntfile.js' , 'package.json' , 'test/*' ]).concat( All , Imports.array );
 
 
     grunt.initConfig({
@@ -62,7 +51,7 @@ module.exports = function( grunt ) {
         },
 
         jshint : {
-            all : ([ 'Gruntfile.js' ]).concat( Main )
+            all: [ 'Gruntfile.js' , 'src/**/*.js' , '!src/external/*' ]
         },
 
         clean: {
@@ -121,18 +110,18 @@ module.exports = function( grunt ) {
 
         watch: {
             debug: {
-                files: Watch,
+                files: [ 'Gruntfile.js' , 'src/**/*.js' , 'test/*' ],
                 tasks: [ '_debug' ]
             },
             debugProd: {
-                files: Watch,
+                files: [ 'Gruntfile.js' , 'src/**/*.js' , 'test/*' ],
                 tasks: [ '_debugProd' ]
             }
         },
 
         concat: {
             imports: {
-                src: All,
+                src: Build,
                 dest: 'temp/<%= pkg.name %>.js'
             },
             dev: {
@@ -242,7 +231,7 @@ module.exports = function( grunt ) {
 
     grunt.registerTask( 'initServer' , function() {
 
-        var server = new httpd();
+        var server = new httpd({ port : HTTPD_NODE_PORT });
 
         server.setHttpDir( 'default' , '/' );
         server.start();

@@ -18,7 +18,7 @@ window.JSMPEG = (function(
     document,
     navigator,
     Object,
-    Date,
+    performance,
     XMLHttpRequest,
     Error,
     Promise,
@@ -37,15 +37,16 @@ window.JSMPEG = (function(
 
     function JSMPEG( selector , opts ) {
 
-        opts = opts || {};
-
         var that = this;
+        opts = opts || {};
 
         MOJO.Construct( that );
 
+        that.waitForLock = !!opts.waitForLock;
         that.autoplay = !!opts.autoplay;
         that.loop = !!opts.loop;
         that.bwFilter = opts.bwFilter || false;
+        that.setFPS( opts.fps );
 
         try {
             var container = that.container = document.querySelector( selector );
@@ -53,10 +54,9 @@ window.JSMPEG = (function(
             that.canvasContext = that.canvas.getContext( '2d' );
         }
         catch( err ) {
-            throw err;
+            that.happen( ERROR , err );
+            throw new Error( 'There was a problem creating the canvas element.' );
         }
-
-        that.setFPS( opts.fps );
 
         that._init();
 
@@ -76,23 +76,10 @@ window.JSMPEG = (function(
                     return ( that.elapsed % 1000 );
                 }
             },
-            canPlayAudio: {
+            frameDeficit: {
                 get: function() {
-                    return (that.audio && that.audioContext);
+                    return (that.pictureRate && that.benchfps) ? (that.pictureRate / that.benchfps) : 1;
                 }
-            },
-            elapsedAudio: {
-                get: function() {
-                    var elapsedAudio = 0;
-                    if (that.canPlayAudio) {
-                        var audioCurrent = that.audioContext.currentTime;
-                        elapsedAudio = ( Math.round( audioCurrent * 1000 ) + that.timeBuffer );
-                    }
-                    return elapsedAudio;
-                }
-            },
-            isIos: {
-                value: (/(ios|iphone)/i).test( navigator.userAgent )
             }
         });
 
@@ -150,18 +137,15 @@ window.JSMPEG = (function(
             that.lateTime = 0;
             that.firstSequenceHeader = 0;
             that.targetTime = 0;
+
+            that.playing = 0;
             that.lastTime = 0;
             that.now = 0;
             that._elapsed = 0;
             that.lastTic = null;
-            
             that.timeBuffer = 0;
 
-            that.audio = null;
-            that.audioContext = null;
-            that.audioLocked = true;
-
-            that._audioEvent = that._audioEvent.bind( that );
+            that.audio = that._createAudio();
 
             that.when( STOP , function( e ) {
                 that._elapsed = 0;
@@ -193,7 +177,10 @@ window.JSMPEG = (function(
 
                 new Promise(function( resolve , reject ) {
                     if (audioURL) {
-                        that.loadAudio( audioURL , resolve , reject );
+                        that.audio
+                            .once( READY , resolve )
+                            .once( ERROR , reject )
+                            .load( audioURL );
                     }
                     else {
                         resolve();
@@ -212,6 +199,24 @@ window.JSMPEG = (function(
             Promise.all( promises ).catch(function( err ) {
                 that.happen( ERROR , err );
             });
+        },
+
+        _createAudio: function() {
+
+            var that = this;
+            var audio = new AudioStream( NULL , { waitForLock : that.waitForLock });
+            
+            that.when( PLAY , function( e ) {
+                audio.play();
+            })
+            .when( PAUSE , function( e ) {
+                audio.pause();
+            })
+            .when([ STOP , END ] , function( e ) {
+                audio.stop();
+            });
+
+            return audio;
         },
 
         _incrementTime: function( increment ) {
@@ -255,8 +260,6 @@ window.JSMPEG = (function(
     // @IMPORT : Slice
     // @IMPORT : Macroblock
     // @IMPORT : Block
-    // @IMPORT : Callbacks
-    // @IMPORT : Audio
     // @IMPORT : BitReader
     
     
@@ -268,10 +271,10 @@ window.JSMPEG = (function(
     document,
     navigator,
     Object,
-    Date,
+    performance,
     XMLHttpRequest,
     Error,
-    WeePromise,
+    Promise,
     requestAnimationFrame,
     setTimeout,
     ArrayBuffer,

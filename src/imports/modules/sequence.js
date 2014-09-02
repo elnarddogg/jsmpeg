@@ -18,19 +18,19 @@
             }
             else if( code == START_PICTURE ) {
                 
-                if( that.playing ) {
+                if( that.playing === 1 ) {
 
                     var s = that.elapsedMacro;
                     var ms = that.elapsedMicro;
                     var total = that.elapsed;
 
-                    that.scheduleNextFrame();
-                    that.happen( TIMING , [ ms , total ]);
-
                     if (that.lastTic !== s) {
                         that.lastTic = s;
                         that.happen( TIC , [ s , total ]);
                     }
+
+                    that.scheduleNextFrame();
+                    that.happen( TIMING , [ ms , total ]);
                 }
 
                 that.decodePicture();
@@ -54,10 +54,11 @@
         }
     };
 
+
     JSMPEG[PROTOTYPE].scheduleNextFrame = function() {
 
         var that = this;
-        var now = Date.now();
+        var now = performance.now();
 
         that.lastTime = that.now || now;
         that.now = now;
@@ -82,6 +83,7 @@
             if( that.benchframe >= that.fps ) {
                 that.benchfps = (that.benchframe / timepassed) * 1000;
                 //console.log('frames per second: ' + that.benchfps);
+                //console.log('frame deficit: ' + that.frameDeficit);
                 that.benchframe = NULL;
                 that.happen( _BENCHFRAME );
             }
@@ -96,37 +98,31 @@
         }
     };
 
+
     JSMPEG[PROTOTYPE].scheduleFPSChange = function( fps ) {
 
         var that = this;
+        var changeOnEvent = [ PAUSE , STOP ];
 
-        cancelFPSChange();
-
-        if (that.playing && that.benchframe) {
+        if (fps === NULL && that.playing === 1 && that.benchframe) {
             //console.log('schedule fps change');
-            that.once( _BENCHFRAME , changeFPS );
-            that.once( STOP , cancelFPSChange );
+            changeOnEvent.unshift( _BENCHFRAME );
         }
         else {
-            changeFPS();
+            changeOnEvent.unshift( DECODE_FRAME );
         }
 
-        function changeFPS() {
-            //console.log('change fps');
-            that.fps = ((fps && fps < 2) ? 2 : fps) || NULL;
-            that.targetTime = Date.now();
-        }
-
-        function cancelFPSChange() {
-            //console.log('cancel fps change');
-            that.dispel( _BENCHFRAME );
-        }
+        that.once( changeOnEvent , [ fps , changeOnEvent ] , changeFPS );
     };
+
 
     JSMPEG[PROTOTYPE].scheduleAnimation = function() {
         var that = this;
-        requestAnimationFrame( that.nextFrame.bind(that), that.canvas );
+        requestAnimationFrame(
+            that.nextFrame.bind( that )
+        );
     };
+
         
     JSMPEG[PROTOTYPE].decodeSequenceHeader = function() {
 
@@ -154,6 +150,7 @@
             that.nonIntraQuantMatrix = that.customNonIntraQuantMatrix;
         }
     };
+
 
     JSMPEG[PROTOTYPE].initBuffers = function() {
 
@@ -187,7 +184,7 @@
             that.addBlockToDestination = that.addBlockToDestinationClamp;
         }
         
-        // Allocated buffers and resize the canvas
+        // Allocate buffers and resize the canvas
         that.currentY = new MaybeClampedUint8Array(that.codedSize);
         that.currentY32 = new Uint32Array(that.currentY.buffer);
 
@@ -218,6 +215,15 @@
         }
         that.fillArray(that.currentRGBA.data, 255);
     };
+
+
+    function changeFPS( e , fps , changeOnEvent ) {
+        var context = e.target;
+        //console.log('change fps');
+        context.fps = ((fps && fps < 2) ? 2 : fps) || NULL;
+        context.targetTime = performance.now();
+        context.dispel( changeOnEvent , changeFPS );
+    }
 
 
 }( JSMPEG ));
